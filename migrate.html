@@ -6,217 +6,190 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Photo Migration Tool</title>
 <style>
- * { box-sizing: border-box; margin: 0; padding: 0; }
- body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F8F9FB; padding: 24px; color: #111; }
- .card { background: #fff; border-radius: 14px; padding: 24px; max-width: 700px; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
- h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
- .sub { color: #6B7280; font-size: 14px; margin-bottom: 24px; }
- .btn { background: #6366F1; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
- .btn:disabled { background: #C7D2FE; cursor: not-allowed; }
- .btn.stop { background: #EF4444; }
- .progress-wrap { margin-top: 20px; display: none; }
- .progress-bar-track { height: 8px; border-radius: 4px; background: #E5E7EB; overflow: hidden; margin-bottom: 8px; }
- .progress-bar-fill { height: 100%; border-radius: 4px; background: #6366F1; transition: width 0.3s; width: 0%; }
- .progress-text { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
- .log { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; height: 320px; overflow-y: auto; font-size: 12px; font-family: monospace; }
- .log-line { padding: 2px 0; border-bottom: 1px solid #F3F4F6; }
- .log-line.ok { color: #059669; }
- .log-line.err { color: #DC2626; }
- .log-line.info { color: #6366F1; }
- .log-line.warn { color: #D97706; }
- .summary { margin-top: 16px; padding: 14px; border-radius: 8px; background: #ECFDF5; border: 1px solid #6EE7B7; display: none; }
- .summary h3 { font-size: 15px; font-weight: 700; color: #065F46; }
- .summary p { font-size: 13px; color: #047857; margin-top: 4px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, sans-serif; background: #F8F9FB; padding: 24px; color: #111; }
+.card { background: #fff; border-radius: 14px; padding: 24px; max-width: 700px; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.sub { color: #6B7280; font-size: 14px; margin-bottom: 24px; }
+.btn { background: #6366F1; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
+.btn.stop { background: #EF4444; margin-top: 8px; }
+.progress-wrap { margin-top: 20px; display: none; }
+.bar-track { height: 8px; border-radius: 4px; background: #E5E7EB; overflow: hidden; margin-bottom: 8px; }
+.bar-fill { height: 100%; border-radius: 4px; background: #6366F1; transition: width 0.3s; width: 0%; }
+.prog-text { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
+.log { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; height: 320px; overflow-y: auto; font-size: 12px; font-family: monospace; }
+.ll { padding: 2px 0; }
+.ok { color: #059669; }
+.er { color: #DC2626; }
+.in { color: #6366F1; }
+.wn { color: #D97706; }
+.done-box { margin-top: 16px; padding: 14px; border-radius: 8px; background: #ECFDF5; border: 1px solid #6EE7B7; display: none; }
+.done-box h3 { font-size: 15px; font-weight: 700; color: #065F46; }
+.done-box p { font-size: 13px; color: #047857; margin-top: 4px; }
 </style>
 </head>
 <body>
 <div class="card">
- <h1>📸 Photo Migration Tool</h1>
- <p class="sub">Pulls photos from Airtable → uploads to Supabase Storage → updates your wardrobe database</p>
- <button class="btn" id="startBtn" onclick="startMigration()">Start Migration</button>
- <button class="btn stop" id="stopBtn" onclick="stopMigration()" style="display:none;margin-top:8px">Stop</button>
- <div class="progress-wrap" id="progressWrap">
-   <div class="progress-bar-track"><div class="progress-bar-fill" id="progressBar"></div></div>
-   <div class="progress-text" id="progressText">Starting…</div>
-   <div class="log" id="log"></div>
- </div>
- <div class="summary" id="summary">
-   <h3>✅ Migration Complete</h3>
-   <p id="summaryText"></p>
- </div>
+<h1>Photo Migration Tool</h1>
+<p class="sub">Airtable photos to Supabase Storage</p>
+<button class="btn" id="startBtn" onclick="go()">Start Migration</button>
+<button class="btn stop" id="stopBtn" onclick="halt()" style="display:none">Stop</button>
+<div class="progress-wrap" id="pw">
+ <div class="bar-track"><div class="bar-fill" id="bf"></div></div>
+ <div class="prog-text" id="pt">Starting...</div>
+ <div class="log" id="lg"></div>
+</div>
+<div class="done-box" id="db"><h3>Migration Complete</h3><p id="ds"></p></div>
 </div>
 <script>
-const AIRTABLE_TOKEN = 'patxcfhuVrX2kjPqg.9199115d74c8f5d1f8ed59caad3204b0f9f3d5f1e7eedd05dfd51c73ceada42b';
-const AIRTABLE_BASE = 'appgBuchwjWkX0yRx';
-const AIRTABLE_TABLE = 'tbl5FUKIsv67GJwU0';
-const SUPABASE_URL = 'https://fyqcokjvdhzbsdnsnxdi.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5cWNva2p2ZGh6YnNkbnNueGRpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjkxOTc1NSwiZXhwIjoyMDk4MDk3NzU1fQ.JilfeUjKCn_QmcrzSMnHkzqCIGjvpN8mRODxjCOmUVA';
-const BUCKET = 'wardrobe-photos';
+var AT = 'patxcfhuVrX2kjPqg';
+AT += '.9199115d74c8f5d1f8ed59caad3204b0f9f3d5f1e7eedd05dfd51c73ceada42b';
+var AB = 'appgBuchwjWkX0yRx';
+var ATB = 'tbl5FUKIsv67GJwU0';
+var SU = 'https://fyqcokjvdhzbsdnsnxdi.supabase.co';
+var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+SK += '.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5cWNva2p2ZGh6YnNkbnNueGRpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjkxOTc1NSwiZXhwIjoyMDk4MDk3NzU1fQ';
+SK += '.JilfeUjKCn_QmcrzSMnHkzqCIGjvpN8mRODxjCOmUVA';
+var BK = 'wardrobe-photos';
+var running = false;
+var stats = {done:0,skip:0,err:0,total:0};
 
-let running = false;
-let stats = { done: 0, skipped: 0, errors: 0, total: 0 };
-
-function log(msg, type = ‘info’) {
-const el = document.getElementById(‘log’);
-const line = document.createElement(‘div’);
-line.className = `log-line ${type}`;
-line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-el.appendChild(line);
-el.scrollTop = el.scrollHeight;
+function lg(msg,cls){
+var el=document.getElementById(‘lg’);
+var d=document.createElement(‘div’);
+d.className=‘ll ‘+(cls||‘in’);
+d.textContent=’[’+new Date().toLocaleTimeString()+’] ‘+msg;
+el.appendChild(d);
+el.scrollTop=el.scrollHeight;
 }
-
-function setProgress(done, total) {
-const pct = total ? Math.round((done / total) * 100) : 0;
-document.getElementById(‘progressBar’).style.width = pct + ‘%’;
-document.getElementById(‘progressText’).textContent = `${done} of ${total} items processed (${pct}%)`;
+function prog(n,t){
+var p=t?Math.round(n/t*100):0;
+document.getElementById(‘bf’).style.width=p+’%’;
+document.getElementById(‘pt’).textContent=n+’ of ‘+t+’ (’+p+’%)’;
 }
+function norm(s){ return s.toLowerCase().trim().replace(/\s+/g,’ ’); }
 
-async function fetchAllAirtableRecords() {
-let records = [];
-let offset = null;
+async function getAT(){
+var recs=[],off=null;
 do {
-let url = `https://api.airtable.com/v0/${AIRTABLE_BASE}/${AIRTABLE_TABLE}?pageSize=100`;
-if (offset) url += `&offset=${offset}`;
-const res = await fetch(url, { headers: { ‘Authorization’: `Bearer ${AIRTABLE_TOKEN}` } });
-if (!res.ok) throw new Error(`Airtable error: ${res.status} ${await res.text()}`);
-const data = await res.json();
-records = records.concat(data.records);
-offset = data.offset;
-log(`Fetched ${records.length} records from Airtable…`, ‘info’);
-} while (offset);
-return records;
+var url=‘https://api.airtable.com/v0/’+AB+’/’+ATB+’?pageSize=100’;
+if(off) url+=’&offset=’+off;
+var r=await fetch(url,{headers:{‘Authorization’:’Bearer ’+AT}});
+if(!r.ok) throw new Error(’Airtable ’+r.status);
+var d=await r.json();
+recs=recs.concat(d.records);
+off=d.offset;
+lg(‘Fetched ‘+recs.length+’ Airtable records…’);
+} while(off);
+return recs;
 }
 
-async function fetchAllSupabaseItems() {
-const res = await fetch(`${SUPABASE_URL}/rest/v1/items?select=id,name,image_url&limit=1000`, {
-headers: { ‘apikey’: SUPABASE_KEY, ‘Authorization’: `Bearer ${SUPABASE_KEY}` }
+async function getSB(){
+var r=await fetch(SU+’/rest/v1/items?select=id,name,image_url&limit=1000’,{
+headers:{‘apikey’:SK,‘Authorization’:’Bearer ’+SK}
 });
-if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
-return await res.json();
+if(!r.ok) throw new Error(’Supabase ’+r.status);
+return await r.json();
 }
 
-async function uploadToStorage(filename, blob) {
-const path = `photos/${filename}`;
-const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-method: ‘POST’,
-headers: {
-‘apikey’: SUPABASE_KEY,
-‘Authorization’: `Bearer ${SUPABASE_KEY}`,
-‘Content-Type’: blob.type || ‘image/jpeg’,
-‘x-upsert’: ‘true’
-},
-body: blob
+async function upload(fname,blob){
+var path=‘photos/’+fname;
+var r=await fetch(SU+’/storage/v1/object/’+BK+’/’+path,{
+method:‘POST’,
+headers:{‘apikey’:SK,‘Authorization’:‘Bearer ‘+SK,‘Content-Type’:blob.type||‘image/jpeg’,‘x-upsert’:‘true’},
+body:blob
 });
-if (!res.ok) {
-const err = await res.text();
-throw new Error(`Upload failed: ${err}`);
-}
-return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+if(!r.ok){ var e=await r.text(); throw new Error(‘Upload: ‘+e); }
+return SU+’/storage/v1/object/public/’+BK+’/’+path;
 }
 
-async function updateDbImageUrl(id, imageUrl) {
-const res = await fetch(`${SUPABASE_URL}/rest/v1/items?id=eq.${id}`, {
-method: ‘PATCH’,
-headers: {
-‘apikey’: SUPABASE_KEY,
-‘Authorization’: `Bearer ${SUPABASE_KEY}`,
-‘Content-Type’: ‘application/json’,
-‘Prefer’: ‘return=minimal’
-},
-body: JSON.stringify({ image_url: imageUrl })
+async function updateDB(id,url){
+var r=await fetch(SU+’/rest/v1/items?id=eq.’+id,{
+method:‘PATCH’,
+headers:{‘apikey’:SK,‘Authorization’:’Bearer ’+SK,‘Content-Type’:‘application/json’,‘Prefer’:‘return=minimal’},
+body:JSON.stringify({image_url:url})
 });
-if (!res.ok) throw new Error(`DB update failed: ${res.status}`);
+if(!r.ok) throw new Error(’DB update ’+r.status);
 }
 
-function normalize(str) {
-return str.toLowerCase().trim().replace(/\s+/g, ’ ’);
-}
-
-async function startMigration() {
-running = true;
-stats = { done: 0, skipped: 0, errors: 0, total: 0 };
-document.getElementById(‘startBtn’).style.display = ‘none’;
-document.getElementById(‘stopBtn’).style.display = ‘block’;
-document.getElementById(‘progressWrap’).style.display = ‘block’;
-document.getElementById(‘summary’).style.display = ‘none’;
-document.getElementById(‘log’).innerHTML = ‘’;
+async function go(){
+running=true;
+stats={done:0,skip:0,err:0,total:0};
+document.getElementById(‘startBtn’).style.display=‘none’;
+document.getElementById(‘stopBtn’).style.display=‘block’;
+document.getElementById(‘pw’).style.display=‘block’;
+document.getElementById(‘db’).style.display=‘none’;
+document.getElementById(‘lg’).innerHTML=’’;
 
 try {
-log(‘Fetching records from Airtable…’, ‘info’);
-const atRecords = await fetchAllAirtableRecords();
-log(`Found ${atRecords.length} Airtable records`, ‘ok’);
+lg(‘Fetching Airtable records…’);
+var atRecs=await getAT();
+lg(‘Got ‘+atRecs.length+’ Airtable records’,‘ok’);
 
 ```
-log('Fetching items from Supabase…', 'info');
-const sbItems = await fetchAllSupabaseItems();
-log(`Found ${sbItems.length} Supabase items`, 'ok');
+lg('Fetching Supabase items...');
+var sbItems=await getSB();
+lg('Got '+sbItems.length+' Supabase items','ok');
 
-const sbMap = {};
-sbItems.forEach(item => { sbMap[normalize(item.name)] = item; });
+var map={};
+sbItems.forEach(function(i){ map[norm(i.name)]=i; });
 
-const withPhotos = atRecords.filter(r => r.fields.Picture && r.fields.Picture.length > 0);
-log(`${withPhotos.length} Airtable records have photos`, 'info');
-stats.total = withPhotos.length;
-setProgress(0, stats.total);
+var withPics=atRecs.filter(function(r){ return r.fields.Picture&&r.fields.Picture.length>0; });
+lg(withPics.length+' records have photos');
+stats.total=withPics.length;
+prog(0,stats.total);
 
-for (let i = 0; i < withPhotos.length; i++) {
- if (!running) { log('Stopped by user.', 'warn'); break; }
+for(var i=0;i<withPics.length;i++){
+ if(!running){ lg('Stopped.','wn'); break; }
+ var rec=withPics[i];
+ var name=rec.fields.Name||'';
+ var pic=rec.fields.Picture[0];
+ var sbItem=map[norm(name)];
 
- const record = withPhotos[i];
- const name = record.fields.Name || '';
- const photo = record.fields.Picture[0];
-
- const sbItem = sbMap[normalize(name)];
- if (!sbItem) {
-   log(`⚠ No Supabase match: "${name}"`, 'warn');
-   stats.skipped++;
-   setProgress(i + 1, stats.total);
+ if(!sbItem){
+   lg('No match: "'+name+'"','wn');
+   stats.skip++;
+   prog(i+1,stats.total);
    continue;
  }
 
  try {
-   const imgRes = await fetch(photo.url);
-   if (!imgRes.ok) throw new Error(`Download failed: ${imgRes.status}`);
-   const blob = await imgRes.blob();
-
-   const ext = (photo.filename || 'photo.jpg').split('.').pop();
-   const safeName = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-   const filename = `${safeName}_${sbItem.id.slice(0,8)}.${ext}`;
-
-   const publicUrl = await uploadToStorage(filename, blob);
-   await updateDbImageUrl(sbItem.id, publicUrl);
-
-   log(`✓ ${name}`, 'ok');
+   var ir=await fetch(pic.url);
+   if(!ir.ok) throw new Error('Download '+ir.status);
+   var blob=await ir.blob();
+   var ext=(pic.filename||'photo.jpg').split('.').pop();
+   var safe=name.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
+   var fname=safe+'_'+sbItem.id.slice(0,8)+'.'+ext;
+   var pubUrl=await upload(fname,blob);
+   await updateDB(sbItem.id,pubUrl);
+   lg('OK: '+name,'ok');
    stats.done++;
- } catch(e) {
-   log(`✗ ${name}: ${e.message}`, 'err');
-   stats.errors++;
+ } catch(e){
+   lg('ERR '+name+': '+e.message,'er');
+   stats.err++;
  }
 
- setProgress(i + 1, stats.total);
- await new Promise(r => setTimeout(r, 150));
+ prog(i+1,stats.total);
+ await new Promise(function(r){ setTimeout(r,150); });
 }
 
-document.getElementById('summary').style.display = 'block';
-document.getElementById('summaryText').textContent =
- `✓ ${stats.done} photos migrated  •  ${stats.skipped} skipped  •  ${stats.errors} errors`;
-log(`Done: ${stats.done} migrated, ${stats.skipped} skipped, ${stats.errors} errors`, 'info');
+document.getElementById('db').style.display='block';
+document.getElementById('ds').textContent=stats.done+' migrated, '+stats.skip+' skipped, '+stats.err+' errors';
+lg('Complete: '+stats.done+' done, '+stats.skip+' skipped, '+stats.err+' errors');
 ```
 
-} catch(e) {
-log(`FATAL: ${e.message}`, ‘err’);
+} catch(e){
+lg(’FATAL: ’+e.message,‘er’);
 console.error(e);
 }
 
-running = false;
-document.getElementById(‘startBtn’).style.display = ‘block’;
-document.getElementById(‘startBtn’).textContent = ‘Run Again’;
-document.getElementById(‘stopBtn’).style.display = ‘none’;
+running=false;
+document.getElementById(‘startBtn’).style.display=‘block’;
+document.getElementById(‘startBtn’).textContent=‘Run Again’;
+document.getElementById(‘stopBtn’).style.display=‘none’;
 }
 
-function stopMigration() {
-running = false;
-}
+function halt(){ running=false; }
 </script>
 
 </body>

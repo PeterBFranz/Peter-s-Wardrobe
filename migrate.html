@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 <html lang="en">
@@ -13,183 +14,196 @@ h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .sub { color: #6B7280; font-size: 14px; margin-bottom: 24px; }
 .btn { background: #6366F1; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
 .btn.stop { background: #EF4444; margin-top: 8px; }
-.progress-wrap { margin-top: 20px; display: none; }
-.bar-track { height: 8px; border-radius: 4px; background: #E5E7EB; overflow: hidden; margin-bottom: 8px; }
-.bar-fill { height: 100%; border-radius: 4px; background: #6366F1; transition: width 0.3s; width: 0%; }
-.prog-text { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
-.log { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; height: 320px; overflow-y: auto; font-size: 12px; font-family: monospace; }
+.pw { margin-top: 20px; display: none; }
+.bt { height: 8px; border-radius: 4px; background: #E5E7EB; overflow: hidden; margin-bottom: 8px; }
+.bf { height: 100%; border-radius: 4px; background: #6366F1; transition: width 0.3s; width: 0%; }
+.pt { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
+.lg { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; height: 320px; overflow-y: auto; font-size: 12px; font-family: monospace; }
 .ll { padding: 2px 0; }
 .ok { color: #059669; }
 .er { color: #DC2626; }
 .in { color: #6366F1; }
 .wn { color: #D97706; }
-.done-box { margin-top: 16px; padding: 14px; border-radius: 8px; background: #ECFDF5; border: 1px solid #6EE7B7; display: none; }
-.done-box h3 { font-size: 15px; font-weight: 700; color: #065F46; }
-.done-box p { font-size: 13px; color: #047857; margin-top: 4px; }
+.db { margin-top: 16px; padding: 14px; border-radius: 8px; background: #ECFDF5; border: 1px solid #6EE7B7; display: none; }
+.db h3 { font-size: 15px; font-weight: 700; color: #065F46; }
+.db p { font-size: 13px; color: #047857; margin-top: 4px; }
 </style>
 </head>
 <body>
 <div class="card">
 <h1>Photo Migration Tool</h1>
 <p class="sub">Airtable photos to Supabase Storage</p>
-<button class="btn" id="startBtn" onclick="go()">Start Migration</button>
-<button class="btn stop" id="stopBtn" onclick="halt()" style="display:none">Stop</button>
-<div class="progress-wrap" id="pw">
- <div class="bar-track"><div class="bar-fill" id="bf"></div></div>
- <div class="prog-text" id="pt">Starting...</div>
- <div class="log" id="lg"></div>
+<button class="btn" id="sb" onclick="startIt()">Start Migration</button>
+<button class="btn stop" id="xb" onclick="stopIt()" style="display:none">Stop</button>
+<div class="pw" id="pw">
+ <div class="bt"><div class="bf" id="bf"></div></div>
+ <div class="pt" id="pt">Starting...</div>
+ <div class="lg" id="lg"></div>
 </div>
-<div class="done-box" id="db"><h3>Migration Complete</h3><p id="ds"></p></div>
+<div class="db" id="db"><h3>Migration Complete</h3><p id="ds"></p></div>
 </div>
+<script id="ms" type="text/plain">
+AT=patxcfhuVrX2kjPqg.9199115d74c8f5d1f8ed59caad3204b0f9f3d5f1e7eedd05dfd51c73ceada42b
+AB=appgBuchwjWkX0yRx
+AT2=tbl5FUKIsv67GJwU0
+SK=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5cWNva2p2ZGh6YnNkbnNueGRpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjkxOTc1NSwiZXhwIjoyMDk4MDk3NzU1fQ.JilfeUjKCn_QmcrzSMnHkzqCIGjvpN8mRODxjCOmUVA
+</script>
 <script>
-var AT = 'patxcfhuVrX2kjPqg';
-AT += '.9199115d74c8f5d1f8ed59caad3204b0f9f3d5f1e7eedd05dfd51c73ceada42b';
-var AB = 'appgBuchwjWkX0yRx';
-var ATB = 'tbl5FUKIsv67GJwU0';
-var SU = 'https://fyqcokjvdhzbsdnsnxdi.supabase.co';
-var SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-SK += '.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5cWNva2p2ZGh6YnNkbnNueGRpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjkxOTc1NSwiZXhwIjoyMDk4MDk3NzU1fQ';
-SK += '.JilfeUjKCn_QmcrzSMnHkzqCIGjvpN8mRODxjCOmUVA';
-var BK = 'wardrobe-photos';
+function getCfg() {
+ var raw = document.getElementById('ms').textContent;
+ var cfg = {};
+ raw.trim().split('\n').forEach(function(line) {
+   var eq = line.indexOf('=');
+   if (eq > 0) cfg[line.slice(0,eq).trim()] = line.slice(eq+1).trim();
+ });
+ return cfg;
+}
+
 var running = false;
 var stats = {done:0,skip:0,err:0,total:0};
+var SU = ‘https://fyqcokjvdhzbsdnsnxdi.supabase.co’;
+var BK = ‘wardrobe-photos’;
 
-function lg(msg,cls){
-var el=document.getElementById(‘lg’);
-var d=document.createElement(‘div’);
-d.className=‘ll ‘+(cls||‘in’);
-d.textContent=’[’+new Date().toLocaleTimeString()+’] ‘+msg;
+function addLog(msg, cls) {
+var el = document.getElementById(‘lg’);
+var d = document.createElement(‘div’);
+d.className = ’ll ’ + (cls||‘in’);
+d.textContent = ‘[’ + new Date().toLocaleTimeString() + ’] ’ + msg;
 el.appendChild(d);
-el.scrollTop=el.scrollHeight;
+el.scrollTop = el.scrollHeight;
 }
-function prog(n,t){
-var p=t?Math.round(n/t*100):0;
-document.getElementById(‘bf’).style.width=p+’%’;
-document.getElementById(‘pt’).textContent=n+’ of ‘+t+’ (’+p+’%)’;
-}
-function norm(s){ return s.toLowerCase().trim().replace(/\s+/g,’ ’); }
 
-async function getAT(){
-var recs=[],off=null;
+function setP(n, t) {
+var p = t ? Math.round(n/t*100) : 0;
+document.getElementById(‘bf’).style.width = p + ‘%’;
+document.getElementById(‘pt’).textContent = n + ’ of ’ + t + ’ (’ + p + ‘%)’;
+}
+
+function norm(s) { return s.toLowerCase().trim().replace(/\s+/g,’ ’); }
+
+async function fetchAT(cfg) {
+var recs = [], off = null;
 do {
-var url=‘https://api.airtable.com/v0/’+AB+’/’+ATB+’?pageSize=100’;
-if(off) url+=’&offset=’+off;
-var r=await fetch(url,{headers:{‘Authorization’:’Bearer ’+AT}});
-if(!r.ok) throw new Error(’Airtable ’+r.status);
-var d=await r.json();
-recs=recs.concat(d.records);
-off=d.offset;
-lg(‘Fetched ‘+recs.length+’ Airtable records…’);
-} while(off);
+var url = ‘https://api.airtable.com/v0/’ + cfg.AB + ‘/’ + cfg.AT2 + ‘?pageSize=100’;
+if (off) url += ‘&offset=’ + off;
+var r = await fetch(url, {headers: {‘Authorization’: ’Bearer ’ + cfg.AT}});
+if (!r.ok) throw new Error(’Airtable ’ + r.status);
+var d = await r.json();
+recs = recs.concat(d.records);
+off = d.offset;
+addLog(‘Fetched ’ + recs.length + ’ Airtable records…’);
+} while (off);
 return recs;
 }
 
-async function getSB(){
-var r=await fetch(SU+’/rest/v1/items?select=id,name,image_url&limit=1000’,{
-headers:{‘apikey’:SK,‘Authorization’:’Bearer ’+SK}
+async function fetchSB(cfg) {
+var r = await fetch(SU + ‘/rest/v1/items?select=id,name,image_url&limit=1000’, {
+headers: {‘apikey’: cfg.SK, ‘Authorization’: ’Bearer ’ + cfg.SK}
 });
-if(!r.ok) throw new Error(’Supabase ’+r.status);
+if (!r.ok) throw new Error(’Supabase ’ + r.status);
 return await r.json();
 }
 
-async function upload(fname,blob){
-var path=‘photos/’+fname;
-var r=await fetch(SU+’/storage/v1/object/’+BK+’/’+path,{
-method:‘POST’,
-headers:{‘apikey’:SK,‘Authorization’:‘Bearer ‘+SK,‘Content-Type’:blob.type||‘image/jpeg’,‘x-upsert’:‘true’},
-body:blob
+async function uploadPhoto(cfg, fname, blob) {
+var path = ‘photos/’ + fname;
+var r = await fetch(SU + ‘/storage/v1/object/’ + BK + ‘/’ + path, {
+method: ‘POST’,
+headers: {‘apikey’: cfg.SK, ‘Authorization’: ’Bearer ’ + cfg.SK, ‘Content-Type’: blob.type||‘image/jpeg’, ‘x-upsert’: ‘true’},
+body: blob
 });
-if(!r.ok){ var e=await r.text(); throw new Error(‘Upload: ‘+e); }
-return SU+’/storage/v1/object/public/’+BK+’/’+path;
+if (!r.ok) { var e = await r.text(); throw new Error(’Upload: ’ + e); }
+return SU + ‘/storage/v1/object/public/’ + BK + ‘/’ + path;
 }
 
-async function updateDB(id,url){
-var r=await fetch(SU+’/rest/v1/items?id=eq.’+id,{
-method:‘PATCH’,
-headers:{‘apikey’:SK,‘Authorization’:’Bearer ’+SK,‘Content-Type’:‘application/json’,‘Prefer’:‘return=minimal’},
-body:JSON.stringify({image_url:url})
+async function updateRow(cfg, id, url) {
+var r = await fetch(SU + ‘/rest/v1/items?id=eq.’ + id, {
+method: ‘PATCH’,
+headers: {‘apikey’: cfg.SK, ‘Authorization’: ’Bearer ’ + cfg.SK, ‘Content-Type’: ‘application/json’, ‘Prefer’: ‘return=minimal’},
+body: JSON.stringify({image_url: url})
 });
-if(!r.ok) throw new Error(’DB update ’+r.status);
+if (!r.ok) throw new Error(’DB ’ + r.status);
 }
 
-async function go(){
-running=true;
-stats={done:0,skip:0,err:0,total:0};
-document.getElementById(‘startBtn’).style.display=‘none’;
-document.getElementById(‘stopBtn’).style.display=‘block’;
-document.getElementById(‘pw’).style.display=‘block’;
-document.getElementById(‘db’).style.display=‘none’;
-document.getElementById(‘lg’).innerHTML=’’;
+async function startIt() {
+var cfg = getCfg();
+running = true;
+stats = {done:0,skip:0,err:0,total:0};
+document.getElementById(‘sb’).style.display = ‘none’;
+document.getElementById(‘xb’).style.display = ‘block’;
+document.getElementById(‘pw’).style.display = ‘block’;
+document.getElementById(‘db’).style.display = ‘none’;
+document.getElementById(‘lg’).innerHTML = ‘’;
 
 try {
-lg(‘Fetching Airtable records…’);
-var atRecs=await getAT();
-lg(‘Got ‘+atRecs.length+’ Airtable records’,‘ok’);
+addLog(‘Reading config…’);
+addLog(‘Fetching Airtable records…’);
+var atRecs = await fetchAT(cfg);
+addLog(‘Got ’ + atRecs.length + ’ Airtable records’, ‘ok’);
 
 ```
-lg('Fetching Supabase items...');
-var sbItems=await getSB();
-lg('Got '+sbItems.length+' Supabase items','ok');
+addLog('Fetching Supabase items...');
+var sbItems = await fetchSB(cfg);
+addLog('Got ' + sbItems.length + ' Supabase items', 'ok');
 
-var map={};
-sbItems.forEach(function(i){ map[norm(i.name)]=i; });
+var map = {};
+sbItems.forEach(function(i) { map[norm(i.name)] = i; });
 
-var withPics=atRecs.filter(function(r){ return r.fields.Picture&&r.fields.Picture.length>0; });
-lg(withPics.length+' records have photos');
-stats.total=withPics.length;
-prog(0,stats.total);
+var withPics = atRecs.filter(function(r) { return r.fields.Picture && r.fields.Picture.length > 0; });
+addLog(withPics.length + ' records have photos');
+stats.total = withPics.length;
+setP(0, stats.total);
 
-for(var i=0;i<withPics.length;i++){
- if(!running){ lg('Stopped.','wn'); break; }
- var rec=withPics[i];
- var name=rec.fields.Name||'';
- var pic=rec.fields.Picture[0];
- var sbItem=map[norm(name)];
+for (var i = 0; i < withPics.length; i++) {
+ if (!running) { addLog('Stopped.', 'wn'); break; }
+ var rec = withPics[i];
+ var name = rec.fields.Name || '';
+ var pic = rec.fields.Picture[0];
+ var sbItem = map[norm(name)];
 
- if(!sbItem){
-   lg('No match: "'+name+'"','wn');
+ if (!sbItem) {
+   addLog('No match: "' + name + '"', 'wn');
    stats.skip++;
-   prog(i+1,stats.total);
+   setP(i+1, stats.total);
    continue;
  }
 
  try {
-   var ir=await fetch(pic.url);
-   if(!ir.ok) throw new Error('Download '+ir.status);
-   var blob=await ir.blob();
-   var ext=(pic.filename||'photo.jpg').split('.').pop();
-   var safe=name.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
-   var fname=safe+'_'+sbItem.id.slice(0,8)+'.'+ext;
-   var pubUrl=await upload(fname,blob);
-   await updateDB(sbItem.id,pubUrl);
-   lg('OK: '+name,'ok');
+   var ir = await fetch(pic.url);
+   if (!ir.ok) throw new Error('Download ' + ir.status);
+   var blob = await ir.blob();
+   var ext = (pic.filename || 'photo.jpg').split('.').pop();
+   var safe = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+   var fname = safe + '_' + sbItem.id.slice(0,8) + '.' + ext;
+   var pubUrl = await uploadPhoto(cfg, fname, blob);
+   await updateRow(cfg, sbItem.id, pubUrl);
+   addLog('OK: ' + name, 'ok');
    stats.done++;
- } catch(e){
-   lg('ERR '+name+': '+e.message,'er');
+ } catch(e) {
+   addLog('ERR ' + name + ': ' + e.message, 'er');
    stats.err++;
  }
 
- prog(i+1,stats.total);
- await new Promise(function(r){ setTimeout(r,150); });
+ setP(i+1, stats.total);
+ await new Promise(function(r) { setTimeout(r, 150); });
 }
 
-document.getElementById('db').style.display='block';
-document.getElementById('ds').textContent=stats.done+' migrated, '+stats.skip+' skipped, '+stats.err+' errors';
-lg('Complete: '+stats.done+' done, '+stats.skip+' skipped, '+stats.err+' errors');
+document.getElementById('db').style.display = 'block';
+document.getElementById('ds').textContent = stats.done + ' migrated, ' + stats.skip + ' skipped, ' + stats.err + ' errors';
+addLog('Done: ' + stats.done + ' migrated');
 ```
 
-} catch(e){
-lg(’FATAL: ’+e.message,‘er’);
+} catch(e) {
+addLog(’FATAL: ’ + e.message, ‘er’);
 console.error(e);
 }
 
-running=false;
-document.getElementById(‘startBtn’).style.display=‘block’;
-document.getElementById(‘startBtn’).textContent=‘Run Again’;
-document.getElementById(‘stopBtn’).style.display=‘none’;
+running = false;
+document.getElementById(‘sb’).style.display = ‘block’;
+document.getElementById(‘sb’).textContent = ‘Run Again’;
+document.getElementById(‘xb’).style.display = ‘none’;
 }
 
-function halt(){ running=false; }
+function stopIt() { running = false; }
 </script>
 
 </body>
